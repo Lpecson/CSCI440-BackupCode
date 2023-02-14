@@ -136,7 +136,9 @@ void eval(char *cmdline)
   int bg = parseline(cmdline, argv);
   if (argv[0] == NULL)
     return;   /* ignore empty lines */
-
+  if (!builtin_cmd(argv)) {
+	  //fork, exec, addjob, wait/print depending on fg or bg job
+  }
   return;
 }
 
@@ -151,7 +153,9 @@ void eval(char *cmdline)
 //
 int builtin_cmd(char **argv)
 {
-
+  if(strncmp(argv[0], "quit", 5) == 0) {
+	  exit(0);
+  }
   return 0;     /* not a builtin command */
 }
 
@@ -209,6 +213,9 @@ void do_bgfg(char **argv)
 //
 void waitfg(pid_t pid)
 {
+  while(pid == fgpid(jobs)) {
+	  sleep(1);
+  }
   return;
 }
 
