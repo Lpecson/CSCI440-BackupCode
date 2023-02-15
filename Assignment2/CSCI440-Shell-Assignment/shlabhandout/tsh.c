@@ -137,18 +137,26 @@ void eval(char *cmdline)
   if (argv[0] == NULL)
     return;   /* ignore empty lines */
   if (!builtin_cmd(argv)) {
-    if((pid = Fork()) == 0) { //child
-    	if(execz(argv[0], argv) < 0) {
-    		printf("%s: Command not found.\n", argv[0]);
-    		fflush(stdout);
-    		exit(0);
+        sigset_t mask;
+        sigemptyset(&mask);
+	sigaddset(&mask, SIGCHLD); 
+	sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
+    	if((pid = Fork()) == 0) { //child
+    		sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+    		if(execz(argv[0], argv) < 0) {
+    			printf("%s: Command not found.\n", argv[0]);
+    			fflush(stdout);
+    			exit(0);
+    		}
     	}
-    }
-    addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
-    if(!bg)
-    	waitfg(pid);
-    else
-    	printf("%d %s", pid, cmdline);
+    	addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
+    	Sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+    	if(!bg) {
+    		waitfg(pid);
+    		}
+    	else {
+    		printf("%d %s", pid, cmdline);
+    	     }
   }
   return;
 }
@@ -246,7 +254,11 @@ void waitfg(pid_t pid)
 //
 void sigchld_handler(int sig)
 {
-  return;
+    pid_t pid;
+    int status
+    while ((pid = waitpid(-1, &status, WNOHANG|WUNTRACED)) > 0) /* Reap a zombie child */
+	deletejob(pid); /* Delete the child from the job list */
+    return;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -274,3 +286,4 @@ void sigtstp_handler(int sig)
 /*********************
  * End signal handlers
  *********************/
+
