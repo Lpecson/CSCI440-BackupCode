@@ -137,7 +137,18 @@ void eval(char *cmdline)
   if (argv[0] == NULL)
     return;   /* ignore empty lines */
   if (!builtin_cmd(argv)) {
-	  //fork, exec, addjob, wait/print depending on fg or bg job
+    if((pid = Fork()) == 0) { //child
+    	if(execz(argv[0], argv) < 0) {
+    		printf("%s: Command not found.\n", argv[0]);
+    		fflush(stdout);
+    		exit(0);
+    	}
+    }
+    addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
+    if(!bg)
+    	waitfg(pid);
+    else
+    	printf("%d %s", pid, cmdline);
   }
   return;
 }
