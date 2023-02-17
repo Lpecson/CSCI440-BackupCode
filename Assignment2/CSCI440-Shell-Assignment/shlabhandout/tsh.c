@@ -128,40 +128,41 @@ void eval(char *cmdline)
   // use below to launch a process.
   //
   char *argv[MAXARGS];
-
+  pid_t pid;
   //
   // The 'bg' variable is TRUE if the job should run
   // in background mode or FALSE if it should run in FG
   //
   int bg = parseline(cmdline, argv);
-  if (argv[0] == NULL)
-    return;   /* ignore empty lines */
+  if (argv[0] == NULL) {
+    return;
+  }	/* ignore empty lines */
   if (!builtin_cmd(argv)) {//not a built in command, fork and run the job in child. If fg wait for job to finish and then return
-        sigset_t mask;
-        sigemptyset(&mask);
+    sigset_t mask;
+    sigemptyset(&mask);
 	sigaddset(&mask, SIGCHLD); 
 	sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
-    	if((pid = Fork()) == 0) { //child
+    	if((pid = fork()) == 0) { //child
     		sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
     		if(execv(argv[0], argv) < 0) {
     			printf("%s: Command not found.\n", argv[0]);
     			fflush(stdout);
     			exit(0);
     		}
-		addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
-		//if fg wait for job to finish
-		exit;
+		    addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);
+			//if fg wait for job to finish
+			exit(0);
     	}
+		sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
     	addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
-    	Sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
     	if(!bg) {
     		waitfg(pid);
     		}
     	else {
-    		printf("%d %s", pid, cmdline);
+    		printf("%d %s", pid, cmdline);//wrong format change later
     	     }
+    return;
   }
-  return;
 }
 
 
@@ -185,9 +186,9 @@ int builtin_cmd(char **argv)
 	  exit(0);//write function that displays foreground jobs
   }
   if(strncmp(argv[0], "bg", 3) == 0) {
-	  exit(0);//write function to display background jobs
+	  exit(0);
   }
-  return 1;     /* not a builtin command */
+  return 0;     /* not a builtin command */
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -266,10 +267,10 @@ void waitfg(pid_t pid)
 //
 void sigchld_handler(int sig)
 {
-    pid_t pid;
-    int status
+	pid_t pid;
+    int status;
     while ((pid = waitpid(-1, &status, WNOHANG|WUNTRACED)) > 0) /* Reap a zombie child */
-	deletejob(pid); /* Delete the child from the job list */
+	deletejob(jobs,pid); /* Delete the child from the job list */
     return;
 }
 
@@ -298,4 +299,3 @@ void sigtstp_handler(int sig)
 /*********************
  * End signal handlers
  *********************/
-
