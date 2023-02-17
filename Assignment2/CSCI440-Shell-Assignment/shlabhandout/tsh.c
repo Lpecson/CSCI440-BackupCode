@@ -136,7 +136,7 @@ void eval(char *cmdline)
   int bg = parseline(cmdline, argv);
   if (argv[0] == NULL)
     return;   /* ignore empty lines */
-  if (!builtin_cmd(argv)) {
+  if (!builtin_cmd(argv)) {//not a built in command, fork and run the job in child. If fg wait for job to finish and then return
         sigset_t mask;
         sigemptyset(&mask);
 	sigaddset(&mask, SIGCHLD); 
@@ -148,6 +148,9 @@ void eval(char *cmdline)
     			fflush(stdout);
     			exit(0);
     		}
+		addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
+		//if fg wait for job to finish
+		exit;
     	}
     	addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
     	Sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
