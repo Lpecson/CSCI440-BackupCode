@@ -178,7 +178,16 @@ int builtin_cmd(char **argv)
   if(strncmp(argv[0], "quit", 5) == 0) {
 	  exit(0);
   }
-  return 0;     /* not a builtin command */
+  if(strncmp(argv[0], "jobs", 5) == 0) {
+	  exit(0);//write jobs function here
+  }
+  if(strncmp(argv[0], "fg", 3) == 0) {
+	  exit(0);//write function that displays foreground jobs
+  }
+  if(strncmp(argv[0], "bg", 3) == 0) {
+	  exit(0);//write function to display background jobs
+  }
+  return 1;     /* not a builtin command */
 }
 
 /////////////////////////////////////////////////////////////////////////////
