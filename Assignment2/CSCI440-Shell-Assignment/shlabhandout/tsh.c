@@ -143,7 +143,7 @@ void eval(char *cmdline)
 	sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
     	if((pid = Fork()) == 0) { //child
     		sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
-    		if(execz(argv[0], argv) < 0) {
+    		if(execv(argv[0], argv) < 0) {
     			printf("%s: Command not found.\n", argv[0]);
     			fflush(stdout);
     			exit(0);
