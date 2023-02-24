@@ -180,6 +180,7 @@ int builtin_cmd(char **argv)
 	  exit(0);
   }
   if(strncmp(argv[0], "jobs", 5) == 0) {
+	  listjobs(jobs);
 	  exit(0);//write jobs function here
   }
   if(strncmp(argv[0], "fg", 3) == 0) {
