@@ -150,12 +150,11 @@ void eval(char *cmdline)
     			fflush(stdout);
     			exit(0);
     		}
-		    addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);
 			//if fg wait for job to finish
 			exit(0);
     	}
+		addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
 		sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
-    	addjob(jobs, pid, (bg ==1 ? BG : FG), cmdline);//parent
     	if(!bg) {
     		waitfg(pid);
     		}
@@ -179,15 +178,18 @@ int builtin_cmd(char **argv)
 {
   if(strncmp(argv[0], "quit", 5) == 0) {
 	  exit(0);
+	  return 1;
   }
   if(strncmp(argv[0], "jobs", 5) == 0) {
 	  listjobs(jobs);
 	  return 1;//write jobs function here
   }
   if(strncmp(argv[0], "fg", 3) == 0) {
-	  return 1;//write function that displays foreground jobs
+	  do_bgfg(argv);
+	  return 1;
   }
   if(strncmp(argv[0], "bg", 3) == 0) {
+	  do_bgfg(argv);
 	  return 1;
   }
   return 0;     /* not a builtin command */
@@ -232,12 +234,16 @@ void do_bgfg(char **argv)
   // the variable 'jobp' is the job pointer
   // for the job ID specified as an argument.
   //
-  // Your actions will depend on the specified command
-  // so we've converted argv[0] to a string (cmd) for
-  // your benefit.
-  //
-  
-
+  if( strncmp(argv[0], "fg", 3) ){
+	 jobp->state = FG;
+	 kill(-jobp->pid, SIGCONT);
+	 waitfg(jobp->pid);//wait for job to finish as it is in the foreground
+  }
+  else if( strncmp(argv[0], "bg", 3) ){
+	 jobp->state = BG;
+	 kill(-jobp->pid, SIGCONT);
+	 printf("[%d] (%d) %s", jobp->jid, jobp->pid, jobp->cmdline);
+  }
   return;
 }
 
@@ -278,11 +284,15 @@ void sigchld_handler(int sig)
 			printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
 			deletejob(jobs,pid); /* Delete the child from the job list */
 		}
-		if( WIFSTOPPED(status) )
+		else if( WIFSTOPPED(status) )
 		{
 			printf("Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
 			struct job_t *job = getjobpid(jobs, pid);
 			job->state = ST;
+		}
+		else
+		{
+			deletejob(jobs,pid);
 		}
 	}
     return;
@@ -295,8 +305,12 @@ void sigchld_handler(int sig)
 //    to the foreground job.
 //
 void sigint_handler(int sig)
-{	
-  kill(-fgpid(jobs), SIGINT);
+{
+	pid_t pid = fgpid(jobs);
+	if(pid)
+	{
+		kill(-fgpid(jobs), SIGINT);
+	}
   return;
 }
 
