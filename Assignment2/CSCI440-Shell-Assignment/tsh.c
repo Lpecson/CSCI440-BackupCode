@@ -234,12 +234,12 @@ void do_bgfg(char **argv)
   // the variable 'jobp' is the job pointer
   // for the job ID specified as an argument.
   //
-  if( strncmp(argv[0], "fg", 3) ){
+  if( strncmp(argv[0], "fg", 3)  == 0 ){
 	 jobp->state = FG;
 	 kill(-jobp->pid, SIGCONT);
 	 waitfg(jobp->pid);//wait for job to finish as it is in the foreground
   }
-  else if( strncmp(argv[0], "bg", 3) ){
+  else if( strncmp(argv[0], "bg", 3)  == 0 ){
 	 jobp->state = BG;
 	 kill(-jobp->pid, SIGCONT);
 	 printf("[%d] (%d) %s", jobp->jid, jobp->pid, jobp->cmdline);
