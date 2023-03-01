@@ -146,7 +146,7 @@ void eval(char *cmdline)
     		sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
 			setpgid(0, 0);
     		if(execv(argv[0], argv) < 0) {
-    			printf("%s: Command not found.\n", argv[0]);
+    			printf("%s: Command not found\n", argv[0]);
     			fflush(stdout);
     			exit(0);
     		}
